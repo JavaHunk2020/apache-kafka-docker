@@ -1,0 +1,37 @@
+version: "3.7"
+
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: 'bitnami/kafka:latest'
+    ports:
+      - '9092:29092'
+      - '29094:29094'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=LISTENER_BOB://kafka:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://kafka:29094
+      - KAFKA_ADVERTISED_LISTENERS=LISTENER_BOB://kafka:29092,LISTENER_FRED://localhost:9092,LISTENER_ALICE://never-gonna-give-you-up:29094
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=LISTENER_BOB:PLAINTEXT,LISTENER_FRED:PLAINTEXT,LISTENER_ALICE:PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=LISTENER_BOB
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_ADVERTISED_HOST_NAME=host.docker.internal
+    depends_on:
+      - zookeeper
+
+  consumer:
+    image: 'pulish-data'
+    build: 
+      context: ./
+      dockerfile: Dockerfile  
+    ports:
+      - '7000:7000'
+    environment:
+      kafka.bootstrapAddress: kafka:29092
+    depends_on:
+      - kafka
